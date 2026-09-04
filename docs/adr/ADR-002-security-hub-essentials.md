@@ -38,6 +38,11 @@ Network reachability scanning, jediná oddělitelná komponenta,
 zůstává **vypnutý** — nemá pro sandbox bez veřejně vystavených
 zdrojů (zatím) žádnou hodnotu.
 
+Stejné chování (automatická aktivace Essentials bundle) bylo potvrzeno
+i při zapojování **Workload účtu** do Security Hub scope — jde tedy
+o vlastnost služby uplatňovanou per účet, ne jen specifikum
+delegovaného administrátora.
+
 ## Alternatives considered
 
 | Alternativa | Proč zamítnuta |

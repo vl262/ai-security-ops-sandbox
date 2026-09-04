@@ -75,10 +75,11 @@ potřebné proměnné, prerekvizity._
 
 | Datum | Milník |
 |---|---|
-| YYYY-MM-DD | Založena AWS Organization, Management account |
-| YYYY-MM-DD | Security a Workload účty vytvořeny |
-| YYYY-MM-DD | Delegovaný administrátor nastaven (GuardDuty, Security Hub) |
-| YYYY-MM-DD | GuardDuty aktivováno (30denní free trial) |
+| 2026-09-03 | Založena AWS Organization, Management account |
+| 2026-09-03 | Security a Workload účty vytvořeny |
+| 2026-09-03 | GuardDuty aktivováno (30denní free trial) |
+| 2026-09-03 | Security Hub aktivováno (30denní free trial) |
+| 2026-09-03 | Delegovaný administrátor nastaven (GuardDuty, Security Hub) |
 
 ## Náklady
 
@@ -112,6 +113,13 @@ GuardDuty threat detection (CloudTrail/VPC Flow/DNS analýza) je oddělený
 add-on mimo Security Hub Essentials trial, se svým vlastním 30denním
 trialem a odděleným cenováním (per-event, per-GB) — u sandboxu s nízkým
 objemem dat rovněž řádově centy.
+
+**Potvrzeno napříč účty:** stejné chování (automatická aktivace Essentials
+bundle při zapnutí Security Hub) nastává **v každém členském účtu zvlášť**
+— ověřeno při zapojování Workload účtu do scope. Resource-unit pricing
+se tedy počítá per účet, ne agregovaně za celou organizaci. Vzhledem
+k minimálnímu počtu zdrojů v obou účtech (Security, Workload) zůstává
+dopad zanedbatelný.
 
 → Rozhodnutí ponechat Essentials capabilities zapnuté (nelze vypnout,
 náklady zanedbatelné) zdokumentovat jako ADR.
