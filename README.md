@@ -60,6 +60,17 @@ samostatně. To může překročit account-level rate limit modelu a vyvolat
 `ThrottlingException` (`boto3` automaticky retryuje, ale i s retry lze
 limit vyčerpat).
 
+**Upřesnění (2026-09-04):** AWS Health Dashboard potvrdil souběžně
+probíhající incident — zvýšená míra `503 Service Unavailable` chyb
+pro Claude Haiku 4.5 v us-east-1, 6:58–7:13 AM PDT, popsaný přímo jako
+"some requests to invoke this model were intermittently throttled and
+returned errors" (vyřešeno AWS engineering týmem, doporučen retry
+neúspěšných requestů). Časově se to shoduje s naším testem, takže
+throttling byl pravděpodobně kombinací vlastního nárazového vzorce
+(stovky findings najednou → souběžné Lambda invocations) **a**
+paralelně probíhajícího AWS-side incidentu — ne čistě důsledek
+vlastního zatížení účtu.
+
 Pro tento sandbox ponecháno neřešené — v reálném provozu findings
 nepřichází v takto koncentrovaných dávkách. Pro produkční nasazení
 by řešením bylo zařadit SQS frontu mezi EventBridge a Lambda (tlumí
