@@ -114,6 +114,7 @@ potřebné proměnné, prerekvizity._
 | 2026-09-04 | Model access pro Claude Haiku 4.5 aktivován (use case form submitted, okamžité schválení); ověřeno v Bedrock Playground |
 | 2026-09-04 | AI triage pipeline funkční end-to-end: GuardDuty → Security Hub → EventBridge → Lambda → Bedrock (Claude Haiku 4.5) potvrzeno reálným AI-generovaným shrnutím v CloudWatch Logs |
 | 2026-09-04 | Zjištěno: `ThrottlingException` na Bedrock Converse API při hromadném testu (stovky sample findings najednou → Lambda škáluje horizontálně → desítky souběžných Bedrock volání překročí account-level rate limit). Neřešeno — pro sandbox účel akceptováno, viz poznámka níže |
+| 2026-09-04 | DynamoDB tabulka `vl-security-findings` vytvořena (on-demand, PK `FindingId` + SK `ProcessedAt`); Lambda rozšířena o zápis AI triage výsledků; ověřeno kompletním záznamem v tabulce (AI summary, severity, timestamps, sample flag) |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
@@ -133,6 +134,20 @@ které bude Lambda potřebovat pro AI triage:
 
 `detail.findings` je pole — Security Hub může v jednom eventu poslat víc
 nálezů najednou, Lambda musí iterovat, ne předpokládat jen jeden prvek.
+
+### DynamoDB schéma (`vl-security-findings`)
+
+| Atribut | Typ | Účel |
+|---|---|---|
+| `FindingId` (Partition key) | String | Unikátní ID nálezu (`detail.findings[0].Id`) |
+| `ProcessedAt` (Sort key) | String (ISO 8601) | Kdy Lambda finding zpracovala — umožňuje historii při opakovaných update eventech |
+| `FindingCreatedAt` | String (ISO 8601) | Kdy finding vznikl (`CreatedAt` z originálního eventu) — rozdíl vůči `ProcessedAt` = latence pipeline |
+| `Title`, `Severity`, `AccountId` | String | Základní metadata nálezu |
+| `AISummary` | String | Výstup Bedrock triage |
+| `Sample` | Boolean | Odlišuje testovací sample findings od reálných |
+
+Table class: **Standard** (ne Standard-IA — nízký objem dat, časté zápisy
+relativně k velikosti, IA se nevyplatí). Billing mode: **on-demand**.
 
 ## Náklady
 
