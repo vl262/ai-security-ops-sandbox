@@ -83,6 +83,7 @@ potřebné proměnné, prerekvizity._
 | 2026-09-03 | Workload účet zapojen do GuardDuty i Security Hub scope (aktivace Security Hub musela proběhnout lokálně v účtu, ne centrálně ze Security accountu) |
 | 2026-09-03 | Cesta A ověřena end-to-end: GuardDuty sample findings vygenerovány (434) a úspěšně agregovány do Security Hub (942) |
 | 2026-09-04 | EventBridge rule `vl-security-hub-findings-to-log` vytvořena a ověřena — Security Hub findings se propisují do CloudWatch Logs (100+ log streamů potvrzeno) |
+| 2026-09-04 | Lambda `vl-security-hub-triage` vytvořena, napojena jako druhý EventBridge target, ověřeno úspěšné spouštění (desítky invocations, 0 failed; ~2ms duration, 39 MB max memory při 128 MB alokaci) |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
