@@ -115,6 +115,7 @@ potřebné proměnné, prerekvizity._
 | 2026-09-04 | AI triage pipeline funkční end-to-end: GuardDuty → Security Hub → EventBridge → Lambda → Bedrock (Claude Haiku 4.5) potvrzeno reálným AI-generovaným shrnutím v CloudWatch Logs |
 | 2026-09-04 | Zjištěno: `ThrottlingException` na Bedrock Converse API při hromadném testu (stovky sample findings najednou → Lambda škáluje horizontálně → desítky souběžných Bedrock volání překročí account-level rate limit). Neřešeno — pro sandbox účel akceptováno, viz poznámka níže |
 | 2026-09-04 | DynamoDB tabulka `vl-security-findings` vytvořena (on-demand, PK `FindingId` + SK `ProcessedAt`); Lambda rozšířena o zápis AI triage výsledků; ověřeno kompletním záznamem v tabulce (AI summary, severity, timestamps, sample flag) |
+| 2026-09-04 | SNS topic `vl-security-findings-alerts` vytvořen, e-mail subscription potvrzena, Lambda rozšířena o `sns.publish()`; **kompletní pipeline ověřena end-to-end** — GuardDuty → Security Hub → EventBridge → Lambda → Bedrock → DynamoDB + SNS, potvrzeno doručeným e-mailem s AI shrnutím nálezu |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
@@ -148,6 +149,25 @@ nálezů najednou, Lambda musí iterovat, ne předpokládat jen jeden prvek.
 
 Table class: **Standard** (ne Standard-IA — nízký objem dat, časté zápisy
 relativně k velikosti, IA se nevyplatí). Billing mode: **on-demand**.
+
+### SNS notifikace (`vl-security-findings-alerts`)
+
+Standard topic (ne FIFO — netřeba garantované pořadí/deduplikace).
+E-mail subscription, potvrzena ručně přes odkaz z AWS potvrzovacího
+e-mailu. Lambda po zápisu do DynamoDB volá `sns.publish()` se stejným
+AI shrnutím — subject obsahuje severity a title nálezu, body obsahuje
+plný AI summary.
+
+### IAM oprávnění Lambda role — shrnutí
+
+Lambda execution role má tři samostatné inline policies (least-privilege,
+jedna služba = jedna policy, snadno auditovatelné):
+
+| Policy | Akce | Resource |
+|---|---|---|
+| `bedrock-invoke-inline` | `bedrock:InvokeModel` | `*` (cross-region inference profile) |
+| `dynamodb-putitem-inline` | `dynamodb:PutItem` | ARN konkrétní tabulky |
+| `sns-publish-inline` | `sns:Publish` | ARN konkrétního topicu |
 
 ## Náklady
 
