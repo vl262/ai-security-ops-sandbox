@@ -68,6 +68,15 @@ do něj GuardDuty nálezy, Security Hub je agreguje a normalizuje
   pro doplňkové detaily o zdrojích) jako rozšíření pipeline — patří
   do samostatného budoucího ADR
 
+**Praktický poznatek (zjištěno při zapojování Workload účtu):**
+Delegovaný administrátor spravuje politiky a agreguje data napříč
+organizací, ale **samotné zapnutí Security Hub pro konkrétní členský
+účet je nutné provést lokálně v tom účtu** (Switch Role do Workload,
+projít onboarding tam) — nejde to dotáhnout centrálně jen ze Security
+accountu, i když tam byl účet už viditelný v "Account coverage" se
+stavem "0 of 32 regions enabled". Delegace tedy neznamená plnou
+vzdálenou kontrolu nad enablement stavem každého člena.
+
 ## Related
 
 - ADR-002 — Přijetí nerozdělitelného Security Hub Essentials plánu
