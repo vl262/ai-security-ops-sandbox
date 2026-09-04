@@ -50,6 +50,22 @@ GuardDuty/Security Hub finding
   drženy ve stejném regionu kvůli jednoduchosti, zvážit případné
   přesunutí blíž geograficky později a zdůvodnit v ADR)
 
+## Známá omezení
+
+**Bedrock throttling při hromadném testu.** Lambda škáluje horizontálně
+— při náhlém přílivu velkého množství findings (např. desítky/stovky
+sample findings vygenerovaných najednou) se spustí odpovídající počet
+souběžných Lambda invocations, z nichž každá volá Bedrock Converse API
+samostatně. To může překročit account-level rate limit modelu a vyvolat
+`ThrottlingException` (`boto3` automaticky retryuje, ale i s retry lze
+limit vyčerpat).
+
+Pro tento sandbox ponecháno neřešené — v reálném provozu findings
+nepřichází v takto koncentrovaných dávkách. Pro produkční nasazení
+by řešením bylo zařadit SQS frontu mezi EventBridge a Lambda (tlumí
+nárazovou zátěž) a/nebo nastavit Lambda reserved concurrency limit,
+aby počet souběžných Bedrock volání zůstal pod rate limitem.
+
 ## Struktura repa
 
 ```
@@ -84,6 +100,9 @@ potřebné proměnné, prerekvizity._
 | 2026-09-03 | Cesta A ověřena end-to-end: GuardDuty sample findings vygenerovány (434) a úspěšně agregovány do Security Hub (942) |
 | 2026-09-04 | EventBridge rule `vl-security-hub-findings-to-log` vytvořena a ověřena — Security Hub findings se propisují do CloudWatch Logs (100+ log streamů potvrzeno) |
 | 2026-09-04 | Lambda `vl-security-hub-triage` vytvořena, napojena jako druhý EventBridge target, ověřeno úspěšné spouštění (desítky invocations, 0 failed; ~2ms duration, 39 MB max memory při 128 MB alokaci) |
+| 2026-09-04 | Model access pro Claude Haiku 4.5 aktivován (use case form submitted, okamžité schválení); ověřeno v Bedrock Playground |
+| 2026-09-04 | AI triage pipeline funkční end-to-end: GuardDuty → Security Hub → EventBridge → Lambda → Bedrock (Claude Haiku 4.5) potvrzeno reálným AI-generovaným shrnutím v CloudWatch Logs |
+| 2026-09-04 | Zjištěno: `ThrottlingException` na Bedrock Converse API při hromadném testu (stovky sample findings najednou → Lambda škáluje horizontálně → desítky souběžných Bedrock volání překročí account-level rate limit). Neřešeno — pro sandbox účel akceptováno, viz poznámka níže |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
