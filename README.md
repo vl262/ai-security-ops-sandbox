@@ -116,6 +116,8 @@ potřebné proměnné, prerekvizity._
 | 2026-09-04 | Zjištěno: `ThrottlingException` na Bedrock Converse API při hromadném testu (stovky sample findings najednou → Lambda škáluje horizontálně → desítky souběžných Bedrock volání překročí account-level rate limit). Neřešeno — pro sandbox účel akceptováno, viz poznámka níže |
 | 2026-09-04 | DynamoDB tabulka `vl-security-findings` vytvořena (on-demand, PK `FindingId` + SK `ProcessedAt`); Lambda rozšířena o zápis AI triage výsledků; ověřeno kompletním záznamem v tabulce (AI summary, severity, timestamps, sample flag) |
 | 2026-09-04 | SNS topic `vl-security-findings-alerts` vytvořen, e-mail subscription potvrzena, Lambda rozšířena o `sns.publish()`; **kompletní pipeline ověřena end-to-end** — GuardDuty → Security Hub → EventBridge → Lambda → Bedrock → DynamoDB + SNS, potvrzeno doručeným e-mailem s AI shrnutím nálezu |
+| 2026-09-04 | CSPM baseline review proveden (Security Hub Posture management, 406 nálezů). Root MFA ověřeno, IAM Manager MFA doplněno, SSM public sharing block opraven. CloudTrail identifikován jako chybějící součást architektury — viz ADR-003 |
+| 2026-09-04 | CloudTrail `vl-organization-trail` vytvořen — multi-region, organizational trail pokrývající všechny 3 účty, Management events Read+Write, SSE-S3 šifrování. Poslední High-severity CSPM nález z ADR-003 vyřešen |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
