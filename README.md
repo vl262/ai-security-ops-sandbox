@@ -82,6 +82,26 @@ potřebné proměnné, prerekvizity._
 | 2026-09-03 | Delegovaný administrátor nastaven (GuardDuty, Security Hub) |
 | 2026-09-03 | Workload účet zapojen do GuardDuty i Security Hub scope (aktivace Security Hub musela proběhnout lokálně v účtu, ne centrálně ze Security accountu) |
 | 2026-09-03 | Cesta A ověřena end-to-end: GuardDuty sample findings vygenerovány (434) a úspěšně agregovány do Security Hub (942) |
+| 2026-09-04 | EventBridge rule `vl-security-hub-findings-to-log` vytvořena a ověřena — Security Hub findings se propisují do CloudWatch Logs (100+ log streamů potvrzeno) |
+
+### Struktura Security Hub finding eventu (pro Lambda parsing)
+
+Ověřeno na reálném (sample) eventu z EventBridge. Klíčové cesty v JSON,
+které bude Lambda potřebovat pro AI triage:
+
+| Pole | Cesta v JSON | Příklad |
+|---|---|---|
+| Název nálezu | `detail.findings[0].Title` | "A phishing domain name was queried by EC2 instance..." |
+| Závažnost | `detail.findings[0].Severity.Label` | `HIGH` |
+| Popis | `detail.findings[0].Description` | Volný text popisu incidentu |
+| Účet | `detail.findings[0].AwsAccountId` | 12místné account ID |
+| Typ zdroje | `detail.findings[0].Resources[0].Type` | `AwsEc2Instance` |
+| Zdroj nálezu | `detail.findings[0].ProductName` | `GuardDuty` |
+| Je to sample? | `detail.findings[0].Sample` | `true` / `false` |
+| Odkaz do konzole | `detail.findings[0].SourceUrl` | přímý link na finding v GuardDuty |
+
+`detail.findings` je pole — Security Hub může v jednom eventu poslat víc
+nálezů najednou, Lambda musí iterovat, ne předpokládat jen jeden prvek.
 
 ## Náklady
 
