@@ -80,6 +80,8 @@ potřebné proměnné, prerekvizity._
 | 2026-09-03 | GuardDuty aktivováno (30denní free trial) |
 | 2026-09-03 | Security Hub aktivováno (30denní free trial) |
 | 2026-09-03 | Delegovaný administrátor nastaven (GuardDuty, Security Hub) |
+| 2026-09-03 | Workload účet zapojen do GuardDuty i Security Hub scope (aktivace Security Hub musela proběhnout lokálně v účtu, ne centrálně ze Security accountu) |
+| 2026-09-03 | Cesta A ověřena end-to-end: GuardDuty sample findings vygenerovány (434) a úspěšně agregovány do Security Hub (942) |
 
 ## Náklady
 
