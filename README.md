@@ -119,7 +119,7 @@ potřebné proměnné, prerekvizity._
 | 2026-09-04 | CSPM baseline review proveden (Security Hub Posture management, 406 nálezů). Root MFA ověřeno, IAM Manager MFA doplněno, SSM public sharing block opraven. CloudTrail identifikován jako chybějící součást architektury — viz ADR-003 |
 | 2026-09-04 | CloudTrail `vl-organization-trail` vytvořen — multi-region, organizational trail pokrývající všechny 3 účty, Management events Read+Write, SSE-S3 šifrování. Poslední High-severity CSPM nález z ADR-003 vyřešen |
 | 2026-09-05 | Terraform poprvé nasazen — modul `workload_sandbox` (honeypot EC2 + security group) ve Workload účtu. První živý IaC-spravovaný zdroj v projektu; zbytek architektury zůstává ručně nastavený (viz ADR-004 k rozhodnutí o rozsahu Terraformu) |
-| 2026-09-05 | Fáze B zahájena: honeypot EC2 (`t3.micro`, Amazon Linux 2023, žádný SSH klíč, žádná IAM role) nasazen ve Workload účtu, veřejná IP přiřazena, port 22 otevřený pro internet. Čeká se na první reálné GuardDuty nálezy |
+| 2026-09-05 | Fáze B zahájena: honeypot EC2 (`t3.micro`, Amazon Linux 2023, žádný SSH klíč, žádná IAM role) nasazen ve Workload účtu, veřejná IP `18.205.237.67` přiřazena, port 22 otevřený pro internet. Launch time: 2026-09-05 14:44 CEST → OS-level auto-shutdown naplánován na **2026-09-08 14:44 CEST** (stopped, ne terminated — úplné smazání vyžaduje `terraform destroy`). Čeká se na první reálné GuardDuty nálezy |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
