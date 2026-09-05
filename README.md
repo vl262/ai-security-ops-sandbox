@@ -35,6 +35,23 @@ GuardDuty/Security Hub finding
    → DynamoDB (log) + SNS (notifikace)
 ```
 
+### Fáze B — Honeypot (Workload account)
+
+Minimální EC2 instance (`t3.micro`, Amazon Linux 2023) s otevřeným
+portem 22 pro celý internet, bez SSH klíče a bez IAM role (viz
+ADR-004). Cíl: získat autentická GuardDuty data z reálného
+internetového provozu místo jen syntetických sample findings.
+
+**Jak boti najdou konkrétní IP adresu:** Není to náhodné uhodnutí.
+Služby jako Shodan a Censys kontinuálně skenují celý IPv4 prostor
+a katalogizují otevřené porty; útočné botnety pak cílí prioritně na
+známé cloud-provider IP rozsahy (AWS, Azure, GCP jsou veřejně
+publikované), protože pravděpodobnost nalezení zajímavého cíle je
+tam vyšší než u náhodných domácích ISP rozsahů. `us-east-1` je
+navíc největší a nejexponovanější AWS region, což zvyšuje rychlost
+detekce. Realisticky lze čekat první skenovací pokusy v řádu hodin
+od vystavení nové IP adresy.
+
 ## Tech stack
 
 - **IaC:** Terraform
