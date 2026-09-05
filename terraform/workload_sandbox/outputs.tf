@@ -12,3 +12,8 @@ output "security_group_id" {
   description = "ID security group honeypotu"
   value       = aws_security_group.honeypot.id
 }
+
+output "vpc_id" {
+  description = "ID vlastní VPC honeypotu"
+  value       = aws_vpc.honeypot.id
+}

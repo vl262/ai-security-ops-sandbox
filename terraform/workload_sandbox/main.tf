@@ -21,6 +21,7 @@ data "aws_ami" "amazon_linux" {
 resource "aws_security_group" "honeypot" {
   name        = "vl-honeypot-sg"
   description = "Honeypot SG - pouze SSH ingress z internetu, zadna jina pravidla"
+  vpc_id      = aws_vpc.honeypot.id
 
   ingress {
     description = "SSH - zamerne otevrene pro honeypot ucel"
@@ -50,9 +51,11 @@ resource "aws_security_group" "honeypot" {
 # IAM role (iam_instance_profile se neuvádí = nulová AWS API oprávnění
 # i v případě kompromitace).
 resource "aws_instance" "honeypot" {
-  ami                    = data.aws_ami.amazon_linux.id
-  instance_type          = var.instance_type
-  vpc_security_group_ids = [aws_security_group.honeypot.id]
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids     = [aws_security_group.honeypot.id]
+  associate_public_ip_address = true
 
   # Bez key_name — instance nemá nastavený žádný SSH přístupový klíč.
   # Bez iam_instance_profile — instance nemá žádná AWS API oprávnění.
