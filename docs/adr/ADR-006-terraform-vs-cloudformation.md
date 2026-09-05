@@ -40,6 +40,33 @@ akce, SSM read), která Terraform vůbec nepotřeboval. To je konkrétní,
 měřitelný rozdíl v "hidden dependencies" mezi nástroji, ne jen otázka
 syntaxe.
 
+### Vyváženější pohled — kdy by CloudFormation naopak vyhrálo
+
+Tenhle experiment vyzněl v praxi ve prospěch Terraformu, ale je
+potřeba tomu rozumět v kontextu, ne jako obecný závěr "CloudFormation
+je horší":
+
+- **Pořadí testování hrálo roli** — Terraform byl připravován a laděn
+  jako první (encoding chyby v security group popisech, VPC úpravy
+  už byly vyřešené), než se totéž zkoušelo v CloudFormation. Fér
+  srovnání by vyžadovalo víc iterací na obou stranách.
+- **CloudFormation má silné stránky mimo rozsah tohoto testu** —
+  nativní integrace s AWS Organizations (StackSets pro multi-account
+  deployment), Service Catalog, a AWS Control Tower staví přímo na
+  CloudFormation. Pro ryze AWS-only, multi-account scénář (jako je
+  tento projekt) by StackSets mohly být architektonicky zajímavější
+  než Terraform workspaces/modules.
+- **Žádný state soubor ke správě** — pro někoho je absence
+  `.tfstate` (a s ním spojených rizik — ztráta, poškození, nutnost
+  `.gitignore` disciplíny) výhodou CloudFormation, ne nevýhodou.
+- **Nulová instalace navíc** — CloudFormation CLI je součástí AWS
+  CLI; Terraform vyžadoval samostatnou instalaci a PATH konfiguraci.
+
+**Závěr zůstává:** volba Terraformu pro tento projekt (viz README —
+multi-cloud relevance, širší tržní poptávka) je platná a experiment
+ji potvrdil pro tenhle konkrétní use-case, ale ne jako univerzální
+"Terraform je lepší nástroj" tvrzení.
+
 ## Alternatives considered
 
 | Alternativa | Proč zamítnuta |
