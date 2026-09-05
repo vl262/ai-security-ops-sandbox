@@ -49,8 +49,18 @@ známé cloud-provider IP rozsahy (AWS, Azure, GCP jsou veřejně
 publikované), protože pravděpodobnost nalezení zajímavého cíle je
 tam vyšší než u náhodných domácích ISP rozsahů. `us-east-1` je
 navíc největší a nejexponovanější AWS region, což zvyšuje rychlost
-detekce. Realisticky lze čekat první skenovací pokusy v řádu hodin
-od vystavení nové IP adresy.
+detekce.
+
+**Jak rychle a jaké porty:** Nástroje jako ZMap dokážou proskenovat
+celý IPv4 prostor (4,3 miliardy adres) na jeden konkrétní port za
+necelou hodinu; Masscan při dostatečné šířce pásma i za jednotky
+minut (zdroj: Durumeric, Wustrow, Halderman — ZMap, 2013). Masové
+skeny typicky necílí na všech 65535 portů najednou, ale běží
+paralelně po jednotlivých, predikovatelně zajímavých portech — mezi
+nejčastěji skenované patří 22 (SSH), 80/443 (HTTP/HTTPS), 3389 (RDP),
+23 (Telnet), 3306 (MySQL) a 6379 (Redis). Port 22, který honeypot
+vystavuje, patří mezi absolutní top cíle. Realisticky lze čekat první
+skenovací pokusy v řádu hodin od vystavení nové IP adresy.
 
 ## Tech stack
 
