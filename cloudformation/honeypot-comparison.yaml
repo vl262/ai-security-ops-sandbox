@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Honeypot EC2 ve vlastni VPC — CloudFormation ekvivalent Terraform
+  modulu terraform/workload_sandbox. Vytvoreno jen pro srovnani
+  s Terraformem, nepouziva se aktivne v projektu.
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    Description: EC2 instance type (free tier eligible)
+
+  SshIngressCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: CIDR povoleny pro SSH (22) — zamerne otevrene pro honeypot
+
+  AutoShutdownMinutes:
+    Type: Number
+    Default: 4320
+    Description: Za kolik minut od spusteni se instance sama vypne (3 dny)
+
+  OwnerTag:
+    Type: String
+    Default: vlad-security-sandbox
+
+Resources:
+
+  # --- Sit (ekvivalent network.tf) ---
+
+  HoneypotVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.42.0.0/24
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: vl-honeypot-cfn-vpc
+        - Key: Purpose
+          Value: honeypot
+        - Key: Owner
+          Value: !Ref OwnerTag
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HoneypotVPC
+      CidrBlock: 10.42.0.0/28
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: vl-honeypot-cfn-public-subnet
+        - Key: Purpose
+          Value: honeypot
+        - Key: Owner
+          Value: !Ref OwnerTag
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: vl-honeypot-cfn-igw
+        - Key: Purpose
+          Value: honeypot
+        - Key: Owner
+          Value: !Ref OwnerTag
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref HoneypotVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref HoneypotVPC
+      Tags:
+        - Key: Name
+          Value: vl-honeypot-cfn-public-rt
+        - Key: Purpose
+          Value: honeypot
+        - Key: Owner
+          Value: !Ref OwnerTag
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # --- Security group + instance (ekvivalent main.tf) ---
+
+  HoneypotSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: vl-honeypot-cfn-sg
+      GroupDescription: "Honeypot SG - pouze SSH ingress z internetu, zadna jina pravidla"
+      VpcId: !Ref HoneypotVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshIngressCidr
+          Description: "SSH - zamerne otevrene pro honeypot ucel"
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+          Description: "Allow all outbound - chceme videt vychozi komunikaci v GuardDuty"
+      Tags:
+        - Key: Name
+          Value: vl-honeypot-cfn-sg
+        - Key: Purpose
+          Value: honeypot
+        - Key: Owner
+          Value: !Ref OwnerTag
+
+  HoneypotInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      # Nejnovejsi Amazon Linux 2023 AMI — CloudFormation na rozdil od
+      # Terraformu resi "nejnovejsi AMI" pres verejny SSM parametr,
+      # ne pres data source dotaz na EC2 API.
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref HoneypotSecurityGroup
+      # Zadny KeyName = zadny SSH klic nainstalovany na instanci.
+      # Zadny IamInstanceProfile = zadna AWS API opravneni.
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          shutdown -h +${AutoShutdownMinutes}
+      Tags:
+        - Key: Name
+          Value: vl-honeypot-cfn
+        - Key: Purpose
+          Value: honeypot
+        - Key: Owner
+          Value: !Ref OwnerTag
+
+Outputs:
+  InstanceId:
+    Description: ID honeypot EC2 instance
+    Value: !Ref HoneypotInstance
+
+  PublicIp:
+    Description: Verejna IP adresa honeypotu
+    Value: !GetAtt HoneypotInstance.PublicIp
+
+  SecurityGroupId:
+    Description: ID security group honeypotu
+    Value: !Ref HoneypotSecurityGroup
+
+  VpcId:
+    Description: ID vlastni VPC honeypotu
+    Value: !Ref HoneypotVPC
