@@ -109,6 +109,42 @@ finding — konzistentní se závěrem v Context sekci (threat-intel
 korelace, ne raw traffic volume, je určující faktor). Sledování
 pokračuje.
 
+### Kvantifikace přes CloudWatch Logs Insights (2026-09-07)
+
+Agregační dotaz nad `/vpc/vl-honeypot-flow-logs` (poslední hodina,
+944 záznamů celkem) potvrdil dominanci `51.15.25.116`:
+
+| Zdrojová IP | Pokusy o port 22/hod |
+|---|---|
+| `51.15.25.116` | **~50** |
+| `116.74.164.106` | ~10 |
+| `49.248.197.50` | ~9 |
+| ostatní (7+ dalších IP) | 1–5 každá |
+
+`51.15.25.116` generuje řádově **5× víc pokusů** než druhý
+nejagresivnější zdroj — jednoznačně vytrvalý, cílený útočník
+(nebo automatizovaný brute-force nástroj), ne náhodné pozadí
+internetu. I přesto zůstává bez GuardDuty findingu, což dál
+posiluje závěr o threat-intel korelaci jako určujícím faktoru,
+ne o objemu provozu.
+
+Použitý dotaz (viz `README.md` — sekce Logs Insights):
+```
+fields @timestamp, @message
+| filter @message like /10\.42\.0\.14 \d+ 22 /
+| parse @message "* * * * * *" as version, account, eni, srcAddr, dstAddr, rest
+| stats count(*) as pokusy by srcAddr
+| sort pokusy desc
+| limit 10
+```
+
+Poznámka k `parse`: standardní hvězdičkový vzorec pro všech 15 polí
+VPC Flow Log formátu selhával (`filter` na parsovaná pole vracel
+0 matches) — pravděpodobně kvůli formátovací odchylce v mezerách.
+Funkční obchvat: `filter` regexem přímo na `@message`, `parse` jen
+prvních 6 polí (do `srcAddr`), zbytek ponechán jako nerozdělený
+`rest`.
+
 ## Related
 
 - ADR-004 — Honeypot design a rozsah nasazení přes Terraform

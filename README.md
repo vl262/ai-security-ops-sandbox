@@ -153,6 +153,7 @@ potřebné proměnné, prerekvizity._
 | 2026-09-05 | Srovnávací experiment: stejný honeypot přepsán do CloudFormation a nasazen paralelně (`vl-honeypot-cfn-stack`, IP `98.92.111.41`) pro přímé porovnání s Terraformem. Zjištění zdokumentována v ADR-006 — CloudFormation vyžadoval navíc `cloudformation:*` a `ssm:GetParameters` IAM oprávnění, která Terraform nepotřeboval. Stack po experimentu odstraněn |
 | 2026-09-05 | Diagnostický krok: po delší době bez GuardDuty findings z honeypotu zjištěno, že `Recon:EC2/PortProbeUnprotectedPort` vyžaduje shodu zdrojové IP s GuardDuty threat intelligence listem — obyčejné oportunistické skenování nemusí vygenerovat finding, i když reálně dorazí. VPC Flow Logs nasazeny jako nezávislý diagnostický nástroj (`aws_flow_log`, CloudWatch Log Group `/vpc/vl-honeypot-flow-logs`, 7denní retence) — viz ADR-007 k iterativnímu procesu ladění IAM oprávnění `terraform-cli` uživatele |
 | 2026-09-07 | VPC Flow Logs potvrdily hypotézu z ADR-007: honeypot reálně přijímá rozsáhlý internetový provoz (masivní port scanning z desítek unikátních IP, jeden zdroj skenující desítky portů během sekund, opakovaný SSH kontakt s narůstající intenzitou) — zatím bez odpovídajícího GuardDuty findingu, konzistentní se závěrem o threat-intel korelaci. Sledování pokračuje |
+| 2026-09-07 | Kvantifikace přes CloudWatch Logs Insights: `51.15.25.116` identifikován jako dominantní útočník s ~50 pokusy o port 22/hod (5× víc než druhý nejagresivnější zdroj) ze 944 celkových flow log záznamů za hodinu |
 
 ### Struktura Security Hub finding eventu (pro Lambda parsing)
 
@@ -205,6 +206,26 @@ jedna služba = jedna policy, snadno auditovatelné):
 | `bedrock-invoke-inline` | `bedrock:InvokeModel` | `*` (cross-region inference profile) |
 | `dynamodb-putitem-inline` | `dynamodb:PutItem` | ARN konkrétní tabulky |
 | `sns-publish-inline` | `sns:Publish` | ARN konkrétního topicu |
+
+### CloudWatch Logs Insights — analýza VPC Flow Logs honeypotu
+
+Log group `/vpc/vl-honeypot-flow-logs` (Workload account). Top útočníci
+na port 22 za poslední hodinu:
+
+```
+fields @timestamp, @message
+| filter @message like /10\.42\.0\.14 \d+ 22 /
+| parse @message "* * * * * *" as version, account, eni, srcAddr, dstAddr, rest
+| stats count(*) as pokusy by srcAddr
+| sort pokusy desc
+| limit 10
+```
+
+**Poznámka:** standardní `parse` vzorec se všemi 15 poli VPC Flow Log
+formátu (`"* * * * * * * * * * * * * * *"`) nefunguje spolehlivě —
+`filter` na takto parsovaná pole (např. `dstPort`) vrací 0 matches,
+pravděpodobně kvůli formátovací odchylce v mezerách. Funkční řešení:
+filtrovat regexem přímo na `@message`, parsovat jen část polí.
 
 ## Náklady
 
