@@ -83,8 +83,31 @@ jednotlivých read-only akcí).
 - Při přidávání dalších Terraform resources vytvářejících IAM role
   očekávat podobný iterativní proces, ne se snažit odhadnout
   kompletní permission set dopředu
-- Zkontrolovat VPC Flow Logs po uplynutí dostatečné doby — potvrdit,
-  jestli honeypot skutečně přijímá provoz, i když GuardDuty mlčí
+
+## Potvrzení hypotézy (2026-09-07)
+
+VPC Flow Logs po ~2 dnech provozu potvrdily hypotézu jednoznačně —
+honeypot přijímá reálný, rozsáhlý internetový provoz, aniž by se
+cokoliv z toho zatím propsalo do GuardDuty:
+
+- **Masivní port scanning z desítek unikátních zdrojových IP** —
+  cílené porty odpovídají typickému "top scanned" seznamu
+  zdokumentovanému v README (5900/VNC, 27017/MongoDB, 6379-podobné,
+  8080/8443/alt-HTTP, 23/Telnet, 2222, atd.)
+- **Jeden zdroj (`136.114.178.128`) provádí rychlý, automatizovaný
+  sken desítek portů ze stejného zdrojového portu (40838) během
+  jednotek sekund** — typický vzorec nástroje jako masscan/nmap,
+  ne náhodný provoz
+- **Opakovaný SSH kontakt s `51.15.25.116`** — narůstající počet
+  paketů v čase (6 → 5 → 3 → 2 → 1 napříč více time-window záznamy),
+  nejnadějnější kandidát na budoucí GuardDuty finding, pokud IP
+  přibude na threat intelligence listu nebo pokud intenzita pokusů
+  nabude behaviorálně rozpoznatelný vzorec
+
+Žádná z pozorovaných zdrojových IP zatím nevygenerovala GuardDuty
+finding — konzistentní se závěrem v Context sekci (threat-intel
+korelace, ne raw traffic volume, je určující faktor). Sledování
+pokračuje.
 
 ## Related
 
