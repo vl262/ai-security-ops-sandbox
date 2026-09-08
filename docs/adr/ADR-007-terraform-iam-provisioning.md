@@ -145,6 +145,60 @@ Funkční obchvat: `filter` regexem přímo na `@message`, `parse` jen
 prvních 6 polí (do `srcAddr`), zbytek ponechán jako nerozdělený
 `rest`.
 
+### Finální shrnutí Fáze B (2026-09-08) — 24hodinová data a uzavření
+
+Po celkem ~3 dnech provozu (do naplánovaného OS-level auto-shutdown —
+instance přešla do stavu "stopped") potvrzují 24hodinová Flow Log
+data (2 371 celkových záznamů na port 22) závěr ještě silněji:
+
+- **`51.15.25.116`: přes 1 600 pokusů za 24 hodin** — řádově dominantní
+  nad druhým nejagresivnějším zdrojem (~250 pokusů)
+- **Pravidelný denní vzorec aktivity kolem 20:00** — viditelný jako
+  jasný výkyv v hodinovém grafu, typický pro naplánovaný (cron-like)
+  automatizovaný skenovací nástroj, ne příležitostné/lidské pokusy
+- **I při tomto objemu a jednoznačně rozpoznatelném vzorci GuardDuty
+  nevygenerovala jediný finding** pro `51.15.25.116` ani pro žádný
+  jiný pozorovaný zdroj
+
+**Závěr:** Hypotéza o threat-intel korelaci jako určujícím faktoru
+(ne objem nebo vzorec provozu) se potvrdila i při dlouhodobém
+pozorování s jednoznačně identifikovatelným, vytrvalým útočníkem.
+Praktický důsledek pro architekturu: GuardDuty samo o sobě nestačí
+jako jediná vrstva detekce pro tento typ hrozby — VPC Flow Logs
+s vlastní analýzou (Logs Insights) odhalily útok, který GuardDuty
+přehlédla. Pro produkční nasazení by to byl silný argument pro
+doplňkovou vlastní detekční logiku (např. Lambda periodicky
+vyhodnocující Flow Log vzorce a generující vlastní alert nezávisle
+na GuardDuty), ne spoléhání na jeden detekční nástroj.
+
+### Externí potvrzení — AbuseIPDB (2026-09-08)
+
+Nezávislé ověření `51.15.25.116` přes AbuseIPDB potvrzuje vlastní
+zjištění z Flow Logs beze zbytku:
+
+- **100% confidence of abuse**, nahlášeno **48× od 31 nezávislých
+  zdrojů**, aktivita pokračuje (poslední report 2 hodiny před
+  kontrolou)
+- **ISP: ONLINE SAS NL, ASN AS12876, doména `scaleway.com`** —
+  potvrzuje, že jde o pronajatou cloudovou VM (Scaleway, Amsterdam),
+  ne kompromitované residenční zařízení — typický vzorec pro
+  útočnou infrastrukturu
+- **Kategorie reportů:** Brute-Force, SSH, Port Scan, IoT Targeted,
+  Spoofing
+- Jeden z reportů explicitně cituje jiný, nezávislý honeypot:
+  *"SSH credential brute-force observed by honeypot. Source IP:
+  51.15.25.116 Targeted device: NAS First..."* — potvrzuje, že jde
+  o širší, sdílenou a dobře zdokumentovanou útočnou kampaň, ne
+  o izolovaný jev vázaný jen na tento projekt
+
+Tohle je nezávislé, externí potvrzení vlastní metodiky (VPC Flow
+Logs + Logs Insights analýza) — jiní, na tomto projektu zcela
+nezávislí pozorovatelé identifikovali stejnou IP za stejný typ
+chování. Posiluje to důvěryhodnost závěru o limitaci GuardDuty
+threat-intel korelace popsaného výše: hrozba je reálná, dobře
+zdokumentovaná komunitou, a přesto (zatím) nekorelovaná do
+GuardDuty threat listu pro tenhle účet.
+
 ## Related
 
 - ADR-004 — Honeypot design a rozsah nasazení přes Terraform
