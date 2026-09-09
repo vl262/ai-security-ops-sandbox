@@ -231,8 +231,43 @@ filtrovat regexem přímo na `@message`, parsovat jen část polí.
 
 ## Náklady
 
-_TODO: doplnit reálný cost breakdown po prvním měsíci provozu —
-cílový rozpočet $190 (AWS Free Tier credit)._
+**Reálná útrata za celou organizaci (2026-09-03 až 2026-09-09, Cost
+Explorer, "Group by: Service"): $2.87 celkem.**
+
+| Služba | Náklad | Poznámka |
+|---|---|---|
+| Claude Haiku 4.5 (Bedrock) | $1.37 | Největší položka — AI triage volání |
+| EC2-Instances | $0.76 | Honeypot (Fáze B) |
+| VPC | $0.37 | Flow Logs |
+| EC2-Other | $0.28 | EBS, data transfer |
+| S3 | $0.09 | CloudTrail log storage |
+| Secrets Manager, DynamoDB, CloudTrail | $0.00 | Zanedbatelné/v rámci trvalého free tier |
+
+Zajímavé zjištění: **AI vrstva (Bedrock) byla dominantním nákladem**,
+ne underlying AWS infrastruktura — GuardDuty, Security Hub, EventBridge,
+Lambda a DynamoDB dohromady stály zlomek toho, co samotná Bedrock
+volání. Potvrzuje to, že architektura je nákladově efektivně
+navržená — infrastruktura je "levná", AI inference je tam, kde se
+peníze reálně utrácí.
+
+### Rozpad podle účtu
+
+| Účet | Náklad | Poznámka |
+|---|---|---|
+| VL-workload | $1.41 | Honeypot (EC2, VPC Flow Logs) — náklady rostly 5.–8. 9., pak $0 po auto-shutdown |
+| VL-security | $1.37 | Bedrock AI triage — $0 po 5. 9. (konec generování sample findings, přechod čistě na honeypot data) |
+| VL-management | $0.09 | Jen CloudTrail S3 storage |
+
+Potvrzuje architektonické rozhodnutí z ADR-001 — Management account
+zůstal prakticky bez vlastních nákladů, přesně jak bylo zamýšleno
+("žádné resources/workloady v Management accountu").
+
+Poznámka k plánovanému rozpočtu $190: promotional credit propadl
+při založení AWS Organization (viz README timeline, 2026-09-05) —
+od té doby účet běží na standard pay-as-you-go bez kreditu. I tak
+zůstává celková útrata za týden intenzivního budování a testování
+pod $3, což potvrzuje původní odhad "jednotky dolarů měsíčně" z
+počátečního nákladového rozboru.
 
 ### Security Hub v2 — přepracovaný cenový model (zjištěno 09/2026)
 
